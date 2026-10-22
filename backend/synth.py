@@ -193,26 +193,35 @@ def hz(midi_note):
 
 
 def render_note(freq, dur, sr, timbre, vel=90):
-    """渲染单个音符"""
+    """渲染单个音符
+
+    颤音用相位调制实现：
+        phase = 2π·f·t + depth·sin(2π·rate·t)
+    而不是时间轴缩放 t*(1+depth*sin(...))，后者会让音高累积漂移。
+    """
     n = max(64, int(dur * sr))
     t = np.arange(n) / sr
 
-    # 颤音（音高调制）
+    # 相位调制（真正的颤音，不累积漂移）
     if timbre.vibrato > 0:
-        vib = 1 + timbre.vibrato * np.sin(2 * np.pi * timbre.vibrato_rate * t)
+        phase = 2 * np.pi * freq * t + timbre.vibrato * np.sin(
+            2 * np.pi * timbre.vibrato_rate * t
+        )
+        # 把相位转回等效时间，喂给波形函数
+        t_mod = phase / (2 * np.pi * freq)
     else:
-        vib = 1.0
+        t_mod = t
 
-    sig = timbre.wave_fn(freq, t * vib)
+    sig = timbre.wave_fn(freq, t_mod)
 
     # 失谐层（模拟多人合奏）
     if timbre.detune > 0:
-        sig2 = timbre.wave_fn(freq * (1 + timbre.detune), t * vib)
+        sig2 = timbre.wave_fn(freq * (1 + timbre.detune), t_mod)
         sig = sig * 0.7 + sig2 * 0.5
 
     # 八度叠加
     if timbre.octave_layer > 0:
-        sig += timbre.wave_fn(freq * 2, t * vib) * timbre.octave_layer
+        sig += timbre.wave_fn(freq * 2, t_mod) * timbre.octave_layer
 
     env = timbre.env_fn(n, sr)
     return sig * env * (vel / 127.0)
