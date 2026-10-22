@@ -1,4 +1,4 @@
-# 音频（版权内容，不入库）
+# 音频（版权内容）
 *.mp3
 *.wav
 *.m4a
@@ -6,16 +6,12 @@
 *.flac
 *.ogg
 
-# B 站缓存
-bilibili/
-sep/
-
-# Python
+# 后端产物
+backend/uploads/
+backend/outputs/
+backend/synth_test/
+backend/__pycache__/
 __pycache__/
-*.py[cod]
-.venv/
-venv/
-*.egg-info/
 
 # 系统
 .DS_Store
@@ -25,4 +21,3 @@ desktop.ini
 # 编辑器
 .vscode/
 .idea/
-*.swp
